@@ -35,7 +35,7 @@ public class Telemetry {
 
     /* What to publish over networktables for telemetry */
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
-
+    private final Pose2d pose = new Pose2d();
     /* Robot swerve drive state */
     private final NetworkTable driveStateTable = inst.getTable("DriveState");
     private final StructPublisher<Pose2d> drivePose = driveStateTable.getStructTopic("Pose", Pose2d.struct).publish();
@@ -120,5 +120,13 @@ public class Telemetry {
 
             SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
         }
+        
     }
+    public double getCurrentRot() {
+        return pose.getRotation().getDegrees();
+    }
+    public double getCurrentX() {
+        return pose.getX();
+    }
+    
 }
