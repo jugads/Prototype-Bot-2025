@@ -39,6 +39,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         configureBindings();
+        System.out.println("Goon");
     }
 
     private void configureBindings() {
