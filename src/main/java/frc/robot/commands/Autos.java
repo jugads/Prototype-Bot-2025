@@ -9,6 +9,7 @@ import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
@@ -18,9 +19,12 @@ public class Autos extends Command {
     // Use addRequirements() here to declare subsystem dependencies.
   }
   public static Command firstPathSketch(CommandSwerveDrivetrain drivetrain) {
-    PathPlannerPath path0 = PathPlannerPath.fromChoreoTrajectory("1st_Path_sketch");
+    // PathPlannerPath path0 = new Pa/*PathPlannerPath.fromChoreoTrajectory("1st_Path_sketch");*/
 
-    return AutoBuilder.followPath(path0);
+    // return AutoBuilder.followPath(path0);
+    return new RunCommand(
+      () -> System.out.println("")
+    );
   }
   // Called when the command is initially scheduled.
   @Override

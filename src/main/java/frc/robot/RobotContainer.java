@@ -14,14 +14,19 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.Autos;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
@@ -37,15 +42,16 @@ public class RobotContainer {
     .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
     .withDriveRequestType(DriveRequestType.OpenLoopVoltage); 
     private final CommandXboxController joystick = new CommandXboxController(0);
-
+    private final SparkMax motor = new SparkMax(3, MotorType.kBrushless);
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    private final  SendableChooser<Command> autoChooser;
+    // private final  SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
-        autoChooser = AutoBuilder.buildAutoChooser();
+        // autoChooser = AutoBuilder.buildAutoChooser();
 
-        autoChooser.addOption("1st Path Sketch", Autos.firstPathSketch(drivetrain));
-        Shuffleboard.getTab("Matches").add("Auto Chooser", autoChooser);
+        // autoChooser.addOption("1st Path Sketch", Autos.firstPathSketch(drivetrain));
+        // Shuffleboard.getTab("Matches").add("Auto Chooser", autoChooser);
+        SmartDashboard.putNumber("Current Draw Climber", motor.getOutputCurrent());
         configureBindings();
         System.out.println("Goon");
     }
@@ -57,9 +63,9 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
         joystick.rightBumper().whileTrue(
@@ -75,7 +81,26 @@ public class RobotContainer {
         joystick.b().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
-        
+        joystick.povUp().whileTrue(
+            new RunCommand(
+              () -> motor.set(0.15)
+            )
+          );
+          joystick.povDown().whileTrue(
+            new RunCommand(
+              () -> motor.set(-0.15)
+            )
+          );
+        joystick.povUp().whileFalse(
+            new RunCommand(
+                () -> motor.set(0.)
+            )
+        );
+        joystick.povDown().whileFalse(
+            new RunCommand(
+                () -> motor.set(0.)
+            )
+        );
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
         joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -89,7 +114,8 @@ public class RobotContainer {
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
-    public Command getAutonomousCommand() {
-        return autoChooser.getSelected();
-    }
+    // public Command getAutonomousCommand() {
+
+    //     return 
+    // }
 }

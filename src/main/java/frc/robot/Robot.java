@@ -54,7 +54,7 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   public void disabledInit() {
     timer = new Timer();
     timer.start();
-    DataLogManager.start();
+    DataLogManager.start("C:\\Users\\singh\\Desktop\\Logs");
     DataLog log = DataLogManager.getLog();
     DriverStation.startDataLog(DataLogManager.getLog());
   }
@@ -84,7 +84,7 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
 
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
