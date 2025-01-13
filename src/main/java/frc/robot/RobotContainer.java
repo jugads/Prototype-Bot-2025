@@ -25,6 +25,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AlignWithCoralStation;
 import frc.robot.commands.Autos;
+import frc.robot.commands.RotateToAprilTag;
+
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import frc.robot.commands.Straighten;
@@ -121,7 +123,7 @@ public class RobotContainer {
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
         joystick.leftTrigger().whileTrue(
-            new AlignWithCoralStation(drivetrain, driveRR)
+            new RotateToAprilTag(drivetrain, driveRR)
         );
         drivetrain.registerTelemetry(logger::telemeterize);
     }

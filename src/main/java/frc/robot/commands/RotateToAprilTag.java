@@ -14,9 +14,10 @@ public class RotateToAprilTag extends Command {
   /** Creates a new RotateToAprilTag. */
   CommandSwerveDrivetrain drivetrain;
   SwerveRequest.RobotCentric drive;
-  PIDController controller = new PIDController(0.2, 0, 0);
+  PIDController controller = new PIDController(0.1334, 0, 0.015);
   public RotateToAprilTag(CommandSwerveDrivetrain drivetrain, SwerveRequest.RobotCentric drive) {
     this.drivetrain = drivetrain;
+    this.drive = drive;
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(drivetrain);
   }
@@ -35,7 +36,7 @@ public class RotateToAprilTag extends Command {
   public void execute() {
     drivetrain.setControl(
     drive
-    .withRotationalRate(controller.calculate(drivetrain.getTX()))
+    .withRotationalRate(-controller.calculate(drivetrain.getTX()))
     );
   }
 
