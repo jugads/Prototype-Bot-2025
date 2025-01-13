@@ -6,14 +6,13 @@ package frc.robot.commands;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.commands.*;
 import frc.robot.subsystems.*;
 // NOTE:  Consider using this command inline, rather than writing a subclass.  For more
 // information, see:
 // https://docs.wpilib.org/en/stable/docs/software/commandbased/convenience-features.html
-public class AlignWithCoralStation extends ParallelCommandGroup {
+public class AlignWithCoralStation extends SequentialCommandGroup {
   /** Creates a new AlignWithCoralStation. */
   public AlignWithCoralStation(CommandSwerveDrivetrain drivetrain, SwerveRequest.RobotCentric drive) {
     // Add your commands in the addCommands() call, e.g.

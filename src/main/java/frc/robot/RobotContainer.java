@@ -30,7 +30,6 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import frc.robot.commands.Straighten;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Arm;
 import frc.robot.commands.Straighten;
 public class RobotContainer {
     DigitalInput input = new DigitalInput(9);
@@ -49,7 +48,6 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
     private final SparkMax motor = new SparkMax(3, MotorType.kBrushless);
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    private final Arm arm = new Arm();
     // private final  SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
@@ -64,18 +62,12 @@ public class RobotContainer {
     }
     public void getInput() {
         SmartDashboard.putBoolean("Sensor val", input.get());
-        SmartDashboard.putNumber("Encoder Value", arm.getEncoderVal());
     }
 
     private void configureBindings() {
         System.out.println(input.get());
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        arm.setDefaultCommand(
-            new InstantCommand(
-                () -> arm.run(0.), arm
-            )
-        );
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(
