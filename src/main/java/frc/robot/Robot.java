@@ -48,14 +48,15 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run(); 
+    m_robotContainer.getInput();
   }
 
   @Override
   public void disabledInit() {
     timer = new Timer();
     timer.start();
-    DataLogManager.start("C:\\Users\\singh\\Desktop\\Logs");
-    DataLog log = DataLogManager.getLog();
+    DataLogManager.start();
+    // DataLog log = DataLogManager.getLog();
     DriverStation.startDataLog(DataLogManager.getLog());
   }
 

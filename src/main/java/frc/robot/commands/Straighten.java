@@ -53,7 +53,7 @@ public class Straighten extends Command {
             .withVelocityY(0.)
             .withRotationalRate(kMaxSpeed * controller.calculate(telemetry.getCurrentRot()));
         }
-        m_drivetrain.applyRequest(() -> updatedDrive);
+        m_drivetrain.setControl(updatedDrive);
   }
 
   // Called once the command ends or is interrupted.

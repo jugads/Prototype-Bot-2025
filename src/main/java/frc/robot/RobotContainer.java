@@ -12,6 +12,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -21,16 +23,19 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.commands.AlignWithCoralStation;
 import frc.robot.commands.Autos;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-
+import frc.robot.commands.Straighten;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Arm;
+import frc.robot.commands.Straighten;
 public class RobotContainer {
+    DigitalInput input = new DigitalInput(9);
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
-
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -44,6 +49,7 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
     private final SparkMax motor = new SparkMax(3, MotorType.kBrushless);
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    private final Arm arm = new Arm();
     // private final  SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
@@ -51,21 +57,33 @@ public class RobotContainer {
 
         // autoChooser.addOption("1st Path Sketch", Autos.firstPathSketch(drivetrain));
         // Shuffleboard.getTab("Matches").add("Auto Chooser", autoChooser);
-        SmartDashboard.putNumber("Current Draw Climber", motor.getOutputCurrent());
+        // SmartDashboard.putNumber("Current Draw Climber", motor.getOutputCurrent());
+        
         configureBindings();
         System.out.println("Goon");
     }
-
+    public void getInput() {
+        SmartDashboard.putBoolean("Sensor val", input.get());
+        SmartDashboard.putNumber("Encoder Value", arm.getEncoderVal());
+    }
 
     private void configureBindings() {
+        System.out.println(input.get());
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
+        arm.setDefaultCommand(
+            new InstantCommand(
+                () -> arm.run(0.), arm
+            )
+        );
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+            drivetrain.applyRequest(
+                () ->
+                drive
+                .withVelocityX(joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                .withVelocityY(joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
         joystick.rightBumper().whileTrue(
@@ -73,8 +91,8 @@ public class RobotContainer {
                 () -> 
                 driveRR
                 .withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
+                .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
             )
         );
         joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
@@ -107,10 +125,12 @@ public class RobotContainer {
         joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
+        joystick.leftTrigger().whileTrue(new Straighten(drivetrain, drive));
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
-
+        joystick.leftTrigger().whileTrue(
+            new AlignWithCoralStation(drivetrain, driveRR)
+        );
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
