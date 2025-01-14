@@ -35,7 +35,7 @@ public class Telemetry {
 
     /* What to publish over networktables for telemetry */
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
-    private final Pose2d pose = new Pose2d();
+    Pose2d pose = new Pose2d();
     /* Robot swerve drive state */
     private final NetworkTable driveStateTable = inst.getTable("DriveState");
     private final StructPublisher<Pose2d> drivePose = driveStateTable.getStructTopic("Pose", Pose2d.struct).publish();
@@ -102,6 +102,7 @@ public class Telemetry {
             m_moduleTargetsArray[i*2 + 0] = state.ModuleTargets[i].angle.getRadians();
             m_moduleTargetsArray[i*2 + 1] = state.ModuleTargets[i].speedMetersPerSecond;
         }
+        this.pose = state.Pose;
 
         SignalLogger.writeDoubleArray("DriveState/Pose", m_poseArray);
         SignalLogger.writeDoubleArray("DriveState/ModuleStates", m_moduleStatesArray);

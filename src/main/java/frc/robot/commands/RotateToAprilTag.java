@@ -14,10 +14,12 @@ public class RotateToAprilTag extends Command {
   /** Creates a new RotateToAprilTag. */
   CommandSwerveDrivetrain drivetrain;
   SwerveRequest.RobotCentric drive;
-  PIDController controller = new PIDController(0.1334, 0, 0.015);
-  public RotateToAprilTag(CommandSwerveDrivetrain drivetrain, SwerveRequest.RobotCentric drive) {
+  double tolerance;
+  PIDController controller = new PIDController(0.11875, 0, 0.007);
+  public RotateToAprilTag(CommandSwerveDrivetrain drivetrain, SwerveRequest.RobotCentric drive, double tolerance) {
     this.drivetrain = drivetrain;
     this.drive = drive;
+    this.tolerance = tolerance;
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(drivetrain);
   }
@@ -25,10 +27,8 @@ public class RotateToAprilTag extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    if (drivetrain.getTX() >= 3) {
       controller.setSetpoint(0);
-      controller.setTolerance(1.);
-    }
+      controller.setTolerance(tolerance);
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -47,6 +47,6 @@ public class RotateToAprilTag extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return controller.atSetpoint();
+    return Math.abs(drivetrain.getTX()) <= 3;
   }
 }

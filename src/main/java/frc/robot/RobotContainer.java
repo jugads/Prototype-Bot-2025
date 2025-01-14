@@ -20,11 +20,15 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AlignWithCoralStation;
 import frc.robot.commands.Autos;
+import frc.robot.commands.DriveToAprilTag;
+import frc.robot.commands.Rotate180;
 import frc.robot.commands.RotateToAprilTag;
 
 import com.revrobotics.spark.SparkMax;
@@ -119,11 +123,15 @@ public class RobotContainer {
         joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-        joystick.leftTrigger().whileTrue(new Straighten(drivetrain, drive));
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
         joystick.leftTrigger().whileTrue(
-            new RotateToAprilTag(drivetrain, driveRR)
+            new SequentialCommandGroup(
+            new RotateToAprilTag(drivetrain, driveRR, 4),
+            new DriveToAprilTag(drivetrain, driveRR),
+            new RotateToAprilTag(drivetrain, driveRR, 2.5)
+            // new Rotate180(drivetrain, driveRR, logger)
+            )
         );
         drivetrain.registerTelemetry(logger::telemeterize);
     }

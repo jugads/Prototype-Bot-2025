@@ -11,8 +11,7 @@ import com.ctre.phoenix6.swerve.*;
 import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class DriveToAprilTag extends Command {
-  PIDController xController = new PIDController(0.3, 0, 0);
-  PIDController yController = new PIDController(0.3, 0, 0);
+  PIDController xController = new PIDController(0.58, 0, 0);
   SwerveRequest.RobotCentric drive;
   CommandSwerveDrivetrain drivetrain;
   /** Creates a new DriveToAprilTag. */
@@ -26,18 +25,29 @@ public class DriveToAprilTag extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    if (drivetrain.getTV()) {
-      xController.setSetpoint(25);
-    }
+    xController.setSetpoint(-25.);
+    xController.setTolerance(1.);
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
+    if (drivetrain.getTV()) {
     drivetrain.setControl(
       drive
-      .withVelocityX(xController.calculate(drivetrain.getTY()))
+      .withVelocityX(-xController.calculate(drivetrain.getTY())*0.3)
+      .withRotationalRate(0)
+      .withVelocityY(0)
     );
+  }
+  else {
+    drivetrain.setControl(
+      drive
+      .withVelocityX(0.)
+      .withRotationalRate(0)
+      .withVelocityY(0)
+    );
+  }
   }
 
   // Called once the command ends or is interrupted.
@@ -47,6 +57,6 @@ public class DriveToAprilTag extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return false;
+    return xController.atSetpoint();
   }
 }
