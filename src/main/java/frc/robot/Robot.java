@@ -4,7 +4,9 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import choreo.Choreo.TrajectoryLogger;
+import choreo.auto.AutoChooser;
+import choreo.auto.AutoFactory;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
@@ -12,10 +14,12 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Leds;
@@ -31,10 +35,11 @@ public class Robot extends TimedRobot {
   private boolean increasing = true; // Tracks if brightness is increasing
 private double brightness = 0;     // Current brightness (0-1 range)
 private final double fadeSpeed = 0.1; // Adjust this value for fade speed
-  
+  private AutoFactory autoFactory;
+    private AutoChooser autoChooser;
+
   @Override
   public void robotInit() {
-    
     m_robotContainer = new RobotContainer();
   buffer = new AddressableLEDBuffer(138); // 138 LEDs
     ledsObject.setLength(buffer.getLength());
@@ -43,7 +48,35 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
     // Initialize LEDs
     leds = new Leds(ledsObject, buffer); // PWM port 9
     // Initialize timer for animation
+    // Create the auto chooser
+
+  /**
+   * Creates a new auto factory for this drivetrain with the given
+   * trajectory logger.
+   *
+   * @param trajLogger Logger for the trajectory
+   * @return AutoFactory for this drivetrain
+   */
+  autoFactory = new AutoFactory(
+    drivetrain::getPoseLL, // A function that returns the current robot pose
+    drivetrain::resetPose, // A function that resets the current robot pose to the provided Pose2d
+    drivetrain::followTraj, // The drive subsystem trajectory follower 
+    true, // If alliance flipping should be enabled 
+    drivetrain, 
     
+     // The drive subsystem
+);
+    autoChooser = new AutoChooser();
+
+    // Add options to the chooser
+    //autoChooser.addRoutine("Example Routine", this::exampleRoutine);
+    //autoChooser.addCmd("Example Auto Command", this::exampleAutoCommand);
+
+    // Put the auto chooser on the dashboard
+    SmartDashboard.putData(autoChooser);
+
+    // Schedule the selected auto during the autonomous period
+    RobotModeTriggers.autonomous().whileTrue(autoChooser.selectedCommandScheduler());
   }
 
   @Override
@@ -56,6 +89,9 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   public void disabledInit() {
     timer = new Timer();
     timer.start();
+    DataLogManager.start();
+    // DataLog log = DataLogManager.getLog();
+    DriverStation.startDataLog(DataLogManager.getLog());
   }
 
   @Override
@@ -124,7 +160,7 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   //     buffer.setLED(i, new Color(brightness, 0, 0)); // Red with variable brightness
   // }
   if (drivetrain.getTV()) {
-  leds.setAll(Color.kCrimson);
+  leds.setAll(Color.kCyan);
   }
   else {
     leds.setAll(Color.kPurple);

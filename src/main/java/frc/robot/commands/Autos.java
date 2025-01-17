@@ -18,14 +18,15 @@ public class Autos extends Command {
   public Autos() {
     // Use addRequirements() here to declare subsystem dependencies.
   }
-  public static Command firstPathSketch(CommandSwerveDrivetrain drivetrain) {
-    // PathPlannerPath path0 = new Pa/*PathPlannerPath.fromChoreoTrajectory("1st_Path_sketch");*/
+  /* public static Command firstPathSketch(CommandSwerveDrivetrain drivetrain) {
+    PathPlannerPath path0 = new PathPlannerPath.fromChoreoTrajectory("1st_Path_sketch", 1);
 
-    // return AutoBuilder.followPath(path0);
+    return AutoBuilder.followPath(path0);
     return new RunCommand(
       () -> System.out.println("")
     );
-  }
+  } */
+
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {}
