@@ -80,10 +80,11 @@ public class RobotContainer {
     // Add options to the chooser
     //autoChooser.addRoutine("Example Routine", this::exampleRoutine);
     autoChooser.addCmd("firstpathsketch", () -> autos.firstpathsketch());
+    
     // Put the auto chooser on the dashboard
     SmartDashboard.putData(autoChooser);
     // Schedule the selected auto during the autonomous period
-    RobotModeTriggers.autonomous().whileTrue(autos.firstpathsketch());
+    RobotModeTriggers.autonomous().whileTrue(autos.testpath());
        
         // SmartDashboard.putNumber("Current Draw Climber", motor.getOutputCurrent());
         publisher = NetworkTableInstance.getDefault()

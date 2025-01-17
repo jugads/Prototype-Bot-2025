@@ -44,7 +44,11 @@ public class Autos extends Command {
   return Commands.sequence(
     autoFactory.trajectoryCmd("1st_Path_sketch"));
  }
-
+ public Command testpath() {
+  drivetrain.resetPose(new Pose2d(9.66354751586914, 4.0638532638549805, new Rotation2d(Math.PI)));
+  return Commands.sequence(
+    autoFactory.trajectoryCmd("New Path"));
+ }
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {}
