@@ -11,6 +11,9 @@ import choreo.Choreo.TrajectoryLogger;
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.trajectory.TrajectorySample;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -20,10 +23,12 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class Autos extends Command {
   AutoFactory autoFactory;
+  CommandSwerveDrivetrain drivetrain;
   /** Creates a new Autos. */
   public Autos(CommandSwerveDrivetrain drivetrain) {
      // The drive subsystem
-    autoFactory = drivetrain.createAutoFactory();
+     this.drivetrain = drivetrain;
+    autoFactory = this.drivetrain.createAutoFactory();
     // Use addRequirements() here to declare subsystem dependencies.
   }
   /* public static Command firstPathSketch(CommandSwerveDrivetrain drivetrain) {
@@ -35,6 +40,7 @@ public class Autos extends Command {
     );
   } */
  public Command firstpathsketch() {
+  drivetrain.resetPose(new Pose2d(9.7203264, 4.082779407501221, new Rotation2d(3.141592653589793)));
   return Commands.sequence(
     autoFactory.trajectoryCmd("1st_Path_sketch"));
  }
