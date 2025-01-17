@@ -4,18 +4,26 @@
 
 package frc.robot.commands;
 
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.PathPlannerPath;
 
+
+import choreo.Choreo;
+import choreo.Choreo.TrajectoryLogger;
+import choreo.auto.AutoFactory;
+import choreo.auto.AutoRoutine;
+import choreo.trajectory.TrajectorySample;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class Autos extends Command {
+  AutoFactory autoFactory;
   /** Creates a new Autos. */
-  public Autos() {
+  public Autos(CommandSwerveDrivetrain drivetrain) {
+     // The drive subsystem
+    autoFactory = drivetrain.createAutoFactory();
     // Use addRequirements() here to declare subsystem dependencies.
   }
   /* public static Command firstPathSketch(CommandSwerveDrivetrain drivetrain) {
@@ -26,6 +34,10 @@ public class Autos extends Command {
       () -> System.out.println("")
     );
   } */
+ public Command firstpathsketch() {
+  return Commands.sequence(
+    autoFactory.trajectoryCmd("1st_Path_sketch"));
+ }
 
   // Called when the command is initially scheduled.
   @Override

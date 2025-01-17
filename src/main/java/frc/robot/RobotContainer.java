@@ -12,7 +12,6 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
-import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -34,6 +33,7 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AlignWithCoralStation;
 import frc.robot.commands.Autos;
@@ -42,6 +42,10 @@ import frc.robot.commands.Rotate180;
 import frc.robot.commands.RotateToAprilTag;
 
 import com.revrobotics.spark.SparkMax;
+
+import choreo.auto.AutoChooser;
+import choreo.auto.AutoFactory;
+
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import frc.robot.commands.Straighten;
 import frc.robot.generated.TunerConstants;
@@ -68,15 +72,24 @@ public class RobotContainer {
     // private final  SendableChooser<Command> autoChooser;
     SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(drivetrain.getKinematics(), new Rotation2d(logger.getCurrentRot()), drivetrain.getModulePositions(), drivetrain.getPoseLL());
     StructPublisher<Pose2d> publisher;
+    private AutoChooser autoChooser;
+    private AutoFactory autoFactory;
+    private final Autos autos = new Autos(drivetrain);
     public RobotContainer() {
-        // autoChooser = AutoBuilder.buildAutoChooser();
-
-        // autoChooser.addOption("1st Path Sketch", Autos.firstPathSketch(drivetrain));
-        // Shuffleboard.getTab("Matches").add("Auto Chooser", autoChooser);
+        autoChooser = new AutoChooser();
+    // Add options to the chooser
+    //autoChooser.addRoutine("Example Routine", this::exampleRoutine);
+    autoChooser.addCmd("firstpathsketch", () -> autos.firstpathsketch());
+    // Put the auto chooser on the dashboard
+    SmartDashboard.putData(autoChooser);
+    // Schedule the selected auto during the autonomous period
+    RobotModeTriggers.autonomous().whileTrue(autoChooser.selectedCommandScheduler());
+       
         // SmartDashboard.putNumber("Current Draw Climber", motor.getOutputCurrent());
         publisher = NetworkTableInstance.getDefault()
-  .getStructTopic("MyPose", Pose2d.struct).publish();
+        .getStructTopic("MyPose", Pose2d.struct).publish();
         configureBindings();
+
     }
     public void getInput() {
         poseEstimator.addVisionMeasurement(drivetrain.getPoseLL(), Utils.getCurrentTimeSeconds());

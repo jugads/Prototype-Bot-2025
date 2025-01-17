@@ -15,4 +15,9 @@ public class Constants {
         public static final int kMotorID = 0;
         public static final double kCurrentThreshold = 30;
     }
+    public class AlgaeScorerConstants{
+        public static final int kMotorID = 0;
+        public static final double kCurrentThreshold = 30;
+        
+    }
 }

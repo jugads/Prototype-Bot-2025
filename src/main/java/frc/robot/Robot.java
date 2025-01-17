@@ -35,8 +35,8 @@ public class Robot extends TimedRobot {
   private boolean increasing = true; // Tracks if brightness is increasing
 private double brightness = 0;     // Current brightness (0-1 range)
 private final double fadeSpeed = 0.1; // Adjust this value for fade speed
-  private AutoFactory autoFactory;
-    private AutoChooser autoChooser;
+  
+    
 
   @Override
   public void robotInit() {
@@ -57,26 +57,7 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
    * @param trajLogger Logger for the trajectory
    * @return AutoFactory for this drivetrain
    */
-  autoFactory = new AutoFactory(
-    drivetrain::getPoseLL, // A function that returns the current robot pose
-    drivetrain::resetPose, // A function that resets the current robot pose to the provided Pose2d
-    drivetrain::followTraj, // The drive subsystem trajectory follower 
-    true, // If alliance flipping should be enabled 
-    drivetrain, 
     
-     // The drive subsystem
-);
-    autoChooser = new AutoChooser();
-
-    // Add options to the chooser
-    //autoChooser.addRoutine("Example Routine", this::exampleRoutine);
-    //autoChooser.addCmd("Example Auto Command", this::exampleAutoCommand);
-
-    // Put the auto chooser on the dashboard
-    SmartDashboard.putData(autoChooser);
-
-    // Schedule the selected auto during the autonomous period
-    RobotModeTriggers.autonomous().whileTrue(autoChooser.selectedCommandScheduler());
   }
 
   @Override
