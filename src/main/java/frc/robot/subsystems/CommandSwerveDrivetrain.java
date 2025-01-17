@@ -9,7 +9,7 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
+import com.ctre.phoenix6.swerve.jni.SwerveJNI.ModulePosition;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
@@ -22,6 +22,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTable;
@@ -49,6 +50,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Field2d field = new Field2d();
     private double m_lastSimTime;
     NetworkTable m_limelight = NetworkTableInstance.getDefault().getTable("limelight");
+
+    NetworkTable m_limelightRear = NetworkTableInstance.getDefault().getTable("limelight-back");
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
@@ -322,12 +325,22 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       public double getTZ() {
         return m_limelight.getEntry("ty").getDouble(0.0);
       }
-      public void getPoseLL() {
-        // var array = m_limelight.getEntry("botpose_wpired").getDoubleArray(new double[]{});
-        // double[] result = {array[0], array[1], array[5]};
-        // Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+      public Pose2d getPoseLL() {
+        var array = m_limelight.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        double[] result = {array[0], array[1], array[5]};
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+        return pose;
         // double[] poseArray = {pose.getX(), pose.getY(), ((pose.getRotation().getDegrees())/360)+(pose.getRotation().getDegrees()%360)};
         // table.getEntry("RobotPose").setDoubleArray(poseArray);
         // SmartDashboard.putNumberArray("Raw Pose", result);
+      }
+      public Pose2d getRearLLPose() {
+        var array = m_limelightRear.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        double[] result = {array[0], array[1], array[5]};
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+        return pose;
+      }
+      public SwerveModulePosition[] getModulePositions() {
+        return getState().ModulePositions;
       }
 }
