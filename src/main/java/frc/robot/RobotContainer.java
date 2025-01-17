@@ -6,14 +6,23 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.security.Timestamp;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.RobotCentric;
 import com.pathplanner.lib.auto.AutoBuilder;
 
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -24,6 +33,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AlignWithCoralStation;
 import frc.robot.commands.Autos;
@@ -52,22 +62,30 @@ public class RobotContainer {
     .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
     .withDriveRequestType(DriveRequestType.OpenLoopVoltage); 
     private final CommandXboxController joystick = new CommandXboxController(0);
+    private final Joystick buttons = new Joystick(1);
     private final SparkMax motor = new SparkMax(3, MotorType.kBrushless);
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     // private final  SendableChooser<Command> autoChooser;
-
+    SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(drivetrain.getKinematics(), new Rotation2d(logger.getCurrentRot()), drivetrain.getModulePositions(), drivetrain.getPoseLL());
+    StructPublisher<Pose2d> publisher;
     public RobotContainer() {
         // autoChooser = AutoBuilder.buildAutoChooser();
 
         // autoChooser.addOption("1st Path Sketch", Autos.firstPathSketch(drivetrain));
         // Shuffleboard.getTab("Matches").add("Auto Chooser", autoChooser);
         // SmartDashboard.putNumber("Current Draw Climber", motor.getOutputCurrent());
-        
+        publisher = NetworkTableInstance.getDefault()
+  .getStructTopic("MyPose", Pose2d.struct).publish();
         configureBindings();
-        System.out.println("Goon");
     }
     public void getInput() {
-        SmartDashboard.putBoolean("Sensor val", input.get());
+        poseEstimator.addVisionMeasurement(drivetrain.getPoseLL(), Utils.getCurrentTimeSeconds());
+        poseEstimator.addVisionMeasurement(drivetrain.getRearLLPose(), Utils.getCurrentTimeSeconds());
+        poseEstimator.update(new Rotation2d((double)drivetrain.getPoseLL().getRotation().getDegrees()-180), drivetrain.getModulePositions());
+        if (drivetrain.getTV()) {
+            poseEstimator.resetPose(drivetrain.getPoseLL());
+        }
+        publisher.set(poseEstimator.getEstimatedPosition());
     }
 
     private void configureBindings() {
@@ -125,12 +143,12 @@ public class RobotContainer {
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
-        joystick.leftTrigger().whileTrue(
+    
+        new JoystickButton(buttons, 12).whileTrue(
             new SequentialCommandGroup(
-            new RotateToAprilTag(drivetrain, driveRR, 4),
-            new DriveToAprilTag(drivetrain, driveRR),
-            new RotateToAprilTag(drivetrain, driveRR, 2.5)
-            // new Rotate180(drivetrain, driveRR, logger)
+                new RotateToAprilTag(drivetrain, driveRR, 3),
+                new DriveToAprilTag(drivetrain, driveRR),
+                new RotateToAprilTag(drivetrain, driveRR, 2)
             )
         );
         drivetrain.registerTelemetry(logger::telemeterize);

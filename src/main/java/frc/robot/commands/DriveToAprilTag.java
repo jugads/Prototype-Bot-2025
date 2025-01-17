@@ -25,7 +25,7 @@ public class DriveToAprilTag extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    xController.setSetpoint(-25.);
+    xController.setSetpoint(20.);
     xController.setTolerance(1.);
   }
 
@@ -35,7 +35,7 @@ public class DriveToAprilTag extends Command {
     if (drivetrain.getTV()) {
     drivetrain.setControl(
       drive
-      .withVelocityX(-xController.calculate(drivetrain.getTY())*0.3)
+      .withVelocityX(xController.calculate(drivetrain.getTY())*0.3)
       .withRotationalRate(0)
       .withVelocityY(0)
     );

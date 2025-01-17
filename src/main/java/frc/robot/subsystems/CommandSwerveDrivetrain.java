@@ -16,9 +16,11 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTable;
@@ -47,6 +49,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private double m_lastSimTime;
     NetworkTable m_limelight = NetworkTableInstance.getDefault().getTable("limelight");
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
+    NetworkTable m_limelightRear = NetworkTableInstance.getDefault().getTable("limelight-back");
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
@@ -57,7 +60,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private boolean m_hasAppliedOperatorPerspective = false;
 
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
-
     /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
@@ -265,7 +267,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     @Override
     public void periodic() {
-        getPoseLL();
         // SmartDashboard.putBoolean("Sensor Val", sensor.get());
         //  * Periodically try to apply the operator perspective.
         //  * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
@@ -313,12 +314,19 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       public double getTZ() {
         return m_limelight.getEntry("ty").getDouble(0.0);
       }
-      public void getPoseLL() {
-        // var array = m_limelight.getEntry("botpose_wpired").getDoubleArray(new double[]{});
-        // double[] result = {array[0], array[1], array[5]};
-        // Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
-        // double[] poseArray = {pose.getX(), pose.getY(), ((pose.getRotation().getDegrees())/360)+(pose.getRotation().getDegrees()%360)};
-        // table.getEntry("RobotPose").setDoubleArray(poseArray);
-        // SmartDashboard.putNumberArray("Raw Pose", result);
+      public Pose2d getPoseLL() {
+        var array = m_limelight.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        double[] result = {array[0], array[1], array[5]};
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+        return pose;
+      }
+      public Pose2d getRearLLPose() {
+        var array = m_limelightRear.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        double[] result = {array[0], array[1], array[5]};
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+        return pose;
+      }
+      public SwerveModulePosition[] getModulePositions() {
+        return getState().ModulePositions;
       }
 }

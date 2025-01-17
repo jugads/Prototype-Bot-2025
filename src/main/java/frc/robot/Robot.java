@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
@@ -55,9 +56,6 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   public void disabledInit() {
     timer = new Timer();
     timer.start();
-    DataLogManager.start();
-    // DataLog log = DataLogManager.getLog();
-    DriverStation.startDataLog(DataLogManager.getLog());
   }
 
   @Override
@@ -126,7 +124,7 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   //     buffer.setLED(i, new Color(brightness, 0, 0)); // Red with variable brightness
   // }
   if (drivetrain.getTV()) {
-  leds.setAll(Color.kCyan);
+  leds.setAll(Color.kCrimson);
   }
   else {
     leds.setAll(Color.kPurple);

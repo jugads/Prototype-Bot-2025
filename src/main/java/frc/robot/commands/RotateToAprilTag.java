@@ -36,7 +36,7 @@ public class RotateToAprilTag extends Command {
   public void execute() {
     drivetrain.setControl(
     drive
-    .withRotationalRate(-controller.calculate(drivetrain.getTX()))
+    .withRotationalRate(controller.calculate(drivetrain.getTX()))
     );
   }
 
