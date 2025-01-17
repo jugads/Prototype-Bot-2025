@@ -6,10 +6,20 @@ package frc.robot.commands;
 
 
 
+import java.io.IOException;
+
+import org.json.simple.parser.ParseException;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
+import com.pathplanner.lib.util.FileVersionException;
+
 import choreo.Choreo;
 import choreo.Choreo.TrajectoryLogger;
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
+import choreo.auto.AutoTrajectory;
 import choreo.trajectory.TrajectorySample;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -24,26 +34,16 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 public class Autos extends Command {
   AutoFactory autoFactory;
   CommandSwerveDrivetrain drivetrain;
+  AutoTrajectory traj;
   /** Creates a new Autos. */
   public Autos(CommandSwerveDrivetrain drivetrain) {
      // The drive subsystem
      this.drivetrain = drivetrain;
     autoFactory = this.drivetrain.createAutoFactory();
+
     // Use addRequirements() here to declare subsystem dependencies.
   }
-  /* public static Command firstPathSketch(CommandSwerveDrivetrain drivetrain) {
-    PathPlannerPath path0 = new PathPlannerPath.fromChoreoTrajectory("1st_Path_sketch", 1);
 
-    return AutoBuilder.followPath(path0);
-    return new RunCommand(
-      () -> System.out.println("")
-    );
-  } */
- public Command firstpathsketch() {
-  drivetrain.resetPose(new Pose2d(9.7203264, 4.082779407501221, new Rotation2d(3.141592653589793)));
-  return Commands.sequence(
-    autoFactory.trajectoryCmd("1st_Path_sketch"));
- }
  public Command testpath() {
   drivetrain.resetPose(new Pose2d(9.66354751586914, 4.0638532638549805, new Rotation2d(Math.PI)));
   return Commands.sequence(

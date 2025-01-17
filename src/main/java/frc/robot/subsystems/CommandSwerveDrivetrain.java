@@ -325,16 +325,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public AutoFactory createAutoFactory() {
         return createAutoFactory((sample, isStart) -> {});
     }
-    public void followTraj(ChassisSpeeds speeds) {
-        setControl(
-            m_ApplyRobotSpeeds
-            .withSpeeds(
-                speeds
-            )
-            
-        );
-    }
-
+    
     public void followPath(SwerveSample sample) {
         m_pathThetaController.enableContinuousInput(-Math.PI, Math.PI);
 

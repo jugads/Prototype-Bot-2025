@@ -79,7 +79,7 @@ public class RobotContainer {
         autoChooser = new AutoChooser();
     // Add options to the chooser
     //autoChooser.addRoutine("Example Routine", this::exampleRoutine);
-    autoChooser.addCmd("firstpathsketch", () -> autos.firstpathsketch());
+    autoChooser.addCmd("firstpathsketch", () -> autos.testpath());
     
     // Put the auto chooser on the dashboard
     SmartDashboard.putData(autoChooser);
