@@ -50,6 +50,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     NetworkTable m_limelight = NetworkTableInstance.getDefault().getTable("limelight");
 
     NetworkTable m_limelightRear = NetworkTableInstance.getDefault().getTable("limelight-back");
+    NetworkTable m_limelightFront = NetworkTableInstance.getDefault().getTable("limelight-front");
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
@@ -325,7 +326,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public AutoFactory createAutoFactory() {
         return createAutoFactory((sample, isStart) -> {});
     }
-    
+
     public void followPath(SwerveSample sample) {
         m_pathThetaController.enableContinuousInput(-Math.PI, Math.PI);
 
@@ -355,9 +356,20 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       public double getTY() {
         return m_limelight.getEntry("ty").getDouble(0.0);
       }
-    
+      public double getTXFront() {
+        return m_limelightFront.getEntry("tx").getDouble(0.);
+      }
+      public double getTYFront() {
+        return m_limelightFront.getEntry("ty").getDouble(0.);
+      }
+      public boolean getTVFront() {
+        return m_limelightFront.getEntry("tv").getDouble(0.0) == 1.0;
+      }
       public boolean getTV() {
         return m_limelight.getEntry("tv").getDouble(0.0) == 1.0;
+      }
+      public boolean getTVRear() {
+        return m_limelightRear.getEntry("tv").getDouble(0.0) == 1.0;
       }
       public double getTZ() {
         return m_limelight.getEntry("ty").getDouble(0.0);
@@ -373,6 +385,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       }
       public Pose2d getRearLLPose() {
         var array = m_limelightRear.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        double[] result = {array[0], array[1], array[5]};
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+        return pose;
+      }
+      public Pose2d getFrontLLPose() {
+        var array = m_limelightFront.getEntry("botpose_wpired").getDoubleArray(new double[]{});
         double[] result = {array[0], array[1], array[5]};
         Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
         return pose;

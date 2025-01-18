@@ -95,9 +95,13 @@ public class RobotContainer {
     public void getInput() {
         poseEstimator.addVisionMeasurement(drivetrain.getPoseLL(), Utils.getCurrentTimeSeconds());
         poseEstimator.addVisionMeasurement(drivetrain.getRearLLPose(), Utils.getCurrentTimeSeconds());
+        poseEstimator.addVisionMeasurement(drivetrain.getFrontLLPose(), Utils.getCurrentTimeSeconds());
         poseEstimator.update(new Rotation2d((double)drivetrain.getPoseLL().getRotation().getDegrees()-180), drivetrain.getModulePositions());
         if (drivetrain.getTV()) {
             poseEstimator.resetPose(drivetrain.getPoseLL());
+        }
+        if (drivetrain.getTVFront()) {
+            poseEstimator.resetPose(drivetrain.getFrontLLPose());
         }
         publisher.set(poseEstimator.getEstimatedPosition());
     }
@@ -161,9 +165,12 @@ public class RobotContainer {
         new JoystickButton(buttons, 12).whileTrue(
             new SequentialCommandGroup(
                 new RotateToAprilTag(drivetrain, driveRR, 3),
-                new DriveToAprilTag(drivetrain, driveRR),
+                new DriveToAprilTag(drivetrain, driveRR, 20, false, 0.),
                 new RotateToAprilTag(drivetrain, driveRR, 2)
             )
+        );
+        joystick.a().whileTrue(
+            new DriveToAprilTag(drivetrain, driveRR, -20, true, -9)
         );
         drivetrain.registerTelemetry(logger::telemeterize);
     }
