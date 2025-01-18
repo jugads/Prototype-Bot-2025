@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -16,6 +17,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
 import choreo.Choreo.TrajectoryLogger;
@@ -453,6 +455,21 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       }
       public SwerveModulePosition[] getModulePositions() {
         return getState().ModulePositions;
+      }
+
+      public PathPlannerPath Makepath(Pose2d Point) {
+        List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+        getPoseLL(),
+        Point
+    );
+    PathConstraints constraints = new PathConstraints(3.0, 3.0, 2 * Math.PI, 4 * Math.PI); // The constraints for this path.
+    PathPlannerPath path = new PathPlannerPath(
+        waypoints,
+        constraints,
+        null,// The ideal starting state, this is only relevant for pre-planned paths, so can be null for on-the-fly paths.
+        null// Goal end state. You can set a holonomic rotation here. If using a differential drivetrain, the rotation will have no effect.
+    );
+    return path;
       }
 
       public Command FollowPathCommand(PathPlannerPath path) {

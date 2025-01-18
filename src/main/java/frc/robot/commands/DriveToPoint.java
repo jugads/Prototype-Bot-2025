@@ -12,9 +12,9 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class DriveToPoint extends Command {
-  SwerveRequest.RobotCentric drive;
-  CommandSwerveDrivetrain drivetrain;
-  Pose2d Point;
+  SwerveRequest.RobotCentric m_drive;
+  CommandSwerveDrivetrain m_drivetrain;
+  Pose2d m_Point;
   /** Creates a new DriveToPoint. */
   public DriveToPoint(CommandSwerveDrivetrain drivetrain, SwerveRequest.RobotCentric drive, Pose2d Point) {
     SwerveRequest.RobotCentric m_drive = drive;
@@ -29,7 +29,10 @@ public class DriveToPoint extends Command {
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
-  public void execute() {}
+  public void execute() {
+    m_drivetrain.FollowPathCommand(m_drivetrain.Makepath(m_Point));
+
+  }
 
   // Called once the command ends or is interrupted.
   @Override
