@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -38,6 +39,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.AlignWithCoralStation;
 import frc.robot.commands.Autos;
 import frc.robot.commands.DriveToAprilTag;
+import frc.robot.commands.FollowPath;
 import frc.robot.commands.Rotate180;
 import frc.robot.commands.RotateToAprilTag;
 
@@ -90,6 +92,8 @@ public class RobotContainer {
         publisher = NetworkTableInstance.getDefault()
         .getStructTopic("MyPose", Pose2d.struct).publish();
         configureBindings();
+
+        
 
     }
     public void getInput() {
@@ -158,13 +162,15 @@ public class RobotContainer {
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
     
-        new JoystickButton(buttons, 12).whileTrue(
-            new SequentialCommandGroup(
-                new RotateToAprilTag(drivetrain, driveRR, 3),
-                new DriveToAprilTag(drivetrain, driveRR),
-                new RotateToAprilTag(drivetrain, driveRR, 2)
-            )
-        );
+        // new JoystickButton(buttons, 12).whileTrue(
+        //     new SequentialCommandGroup(
+        //         new RotateToAprilTag(drivetrain, driveRR, 3),
+        //         new DriveToAprilTag(drivetrain, driveRR),
+        //         new RotateToAprilTag(drivetrain, driveRR, 2)
+        //     )
+        // );
+
+        new JoystickButton(buttons, 12).whileTrue(new FollowPath(drivetrain, driveRR));
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
