@@ -25,6 +25,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -58,6 +59,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     // private DigitalInput sensor = new DigitalInput(9);
     NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
     NetworkTable table = ntInstance.getTable("Pose");
+    NetworkTable poseTable = ntInstance.getTable("MyPose");
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
@@ -279,7 +281,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     @Override
     public void periodic() {
-        getPoseLL();
         // SmartDashboard.putBoolean("Sensor Val", sensor.get());
         //  * Periodically try to apply the operator perspective.
         //  * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
@@ -315,10 +316,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
     public AutoFactory createAutoFactory(TrajectoryLogger<SwerveSample> trajLogger) {
         return new AutoFactory(
-            () -> getState().Pose,
+            () -> this.getState().Pose,
             this::resetPose,
             this::followPath,
-            true,
+            false,
             this,
             trajLogger
         );
@@ -330,7 +331,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public void followPath(SwerveSample sample) {
         m_pathThetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-        var pose = getState().Pose;
+        var pose = getFrontLLPose();
 
         var targetSpeeds = sample.getChassisSpeeds();
         targetSpeeds.vxMetersPerSecond += m_pathXController.calculate(
@@ -352,7 +353,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public double getTX() {
         return m_limelight.getEntry("tx").getDouble(0.0);
       }
-      
+      public Pose2d getPoseNT() {
+        return (Pose2d) NetworkTableInstance.getDefault().getStructTopic("MyPose", Pose2d.struct).getEntry(getFrontLLPose(), (PubSubOption)null);
+      }
       public double getTY() {
         return m_limelight.getEntry("ty").getDouble(0.0);
       }
@@ -392,10 +395,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       public Pose2d getFrontLLPose() {
         var array = m_limelightFront.getEntry("botpose_wpired").getDoubleArray(new double[]{});
         double[] result = {array[0], array[1], array[5]};
-        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]*(Math.PI/180)));
         return pose;
       }
       public SwerveModulePosition[] getModulePositions() {
         return getState().ModulePositions;
       }
+
+    //   public 
 }
