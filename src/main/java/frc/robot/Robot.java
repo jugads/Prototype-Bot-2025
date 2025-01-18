@@ -143,8 +143,14 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   if (drivetrain.getTV()) {
   leds.setAll(Color.kCyan);
   }
+  else if (drivetrain.getTVFront()) {
+    leds.setAll(Color.kRed);
+  }
+  else if (drivetrain.getTVRear()) {
+    leds.setAll(Color.kForestGreen);
+  }
   else {
-    leds.setAll(Color.kPurple);
+    leds.setAll(Color.kBlack);
   }
   // Push updated LED data to the strip
   ledsObject.setData(buffer);

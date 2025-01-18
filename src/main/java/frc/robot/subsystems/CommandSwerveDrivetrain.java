@@ -32,6 +32,8 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -54,6 +56,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     NetworkTable m_limelight = NetworkTableInstance.getDefault().getTable("limelight");
 
     NetworkTable m_limelightRear = NetworkTableInstance.getDefault().getTable("limelight-back");
+    NetworkTable m_limelightFront = NetworkTableInstance.getDefault().getTable("limelight-front");
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
@@ -61,6 +64,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     // private DigitalInput sensor = new DigitalInput(9);
     NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
     NetworkTable table = ntInstance.getTable("Pose");
+    NetworkTable poseTable = ntInstance.getTable("MyPose");
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
@@ -167,43 +171,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         //configureAutoBuilder();
         
 
-
-    private void configureAutoBuilder() {
-        try {
-            var config = RobotConfig.fromGUISettings();
-            AutoBuilder.configure(()-> getState().Pose, 
-                                this::resetPose,
-                                () -> getState().Speeds, 
-                                (speeds, feedforwards) -> setControl(
-                                    m_ApplyRobotSpeeds.withSpeeds(speeds)
-                        .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
-                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
-                                ), 
-                                new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                                new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
-                                new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
-            ), 
-                                config, 
-                                () -> {
-                                    // Boolean supplier that controls when the path will be mirrored for the red alliance
-                                    // This will flip the path being followed to the red side of the field.
-                                    // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
-                      
-                                    var alliance = DriverStation.getAlliance();
-                                    if (alliance.isPresent()) {
-                                      return alliance.get() == DriverStation.Alliance.Red;
-                                    }
-                                    return false;
-                                  },
-                                    this);
-
-                                    
-                }
-                catch (Exception ex) {
-                    DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
-                }
-        }
-
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>
@@ -262,6 +229,43 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
         //configureAutoBuilder();
     }
+
+    private void configureAutoBuilder() {
+        try {
+            var config = RobotConfig.fromGUISettings();
+            AutoBuilder.configure(()-> getState().Pose, 
+                                this::resetPose,
+                                () -> getState().Speeds, 
+                                (speeds, feedforwards) -> setControl(
+                                    m_ApplyRobotSpeeds.withSpeeds(speeds)
+                        .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+                                ), 
+                                new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
+                                new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+                                new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
+            ), 
+                                config, 
+                                () -> {
+                                    // Boolean supplier that controls when the path will be mirrored for the red alliance
+                                    // This will flip the path being followed to the red side of the field.
+                                    // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+                      
+                                    var alliance = DriverStation.getAlliance();
+                                    if (alliance.isPresent()) {
+                                      return alliance.get() == DriverStation.Alliance.Red;
+                                    }
+                                    return false;
+                                  },
+                                    this);
+
+                                    
+                }
+                catch (Exception ex) {
+                    DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
+                }
+        }
+
     /**
      * Creates a new auto factory for this drivetrain.
      *
@@ -330,7 +334,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     @Override
     public void periodic() {
-        getPoseLL();
         // SmartDashboard.putBoolean("Sensor Val", sensor.get());
         //  * Periodically try to apply the operator perspective.
         //  * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
@@ -366,10 +369,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
     public AutoFactory createAutoFactory(TrajectoryLogger<SwerveSample> trajLogger) {
         return new AutoFactory(
-            () -> getState().Pose,
+            () -> this.getState().Pose,
             this::resetPose,
             this::followPath,
-            true,
+            false,
             this,
             trajLogger
         );
@@ -377,11 +380,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public AutoFactory createAutoFactory() {
         return createAutoFactory((sample, isStart) -> {});
     }
-    
+
     public void followPath(SwerveSample sample) {
         m_pathThetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-        var pose = getState().Pose;
+        var pose = getFrontLLPose();
 
         var targetSpeeds = sample.getChassisSpeeds();
         targetSpeeds.vxMetersPerSecond += m_pathXController.calculate(
@@ -403,13 +406,26 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public double getTX() {
         return m_limelight.getEntry("tx").getDouble(0.0);
       }
-      
+      public Pose2d getPoseNT() {
+        return (Pose2d) NetworkTableInstance.getDefault().getStructTopic("MyPose", Pose2d.struct).getEntry(getFrontLLPose(), (PubSubOption)null);
+      }
       public double getTY() {
         return m_limelight.getEntry("ty").getDouble(0.0);
       }
-    
+      public double getTXFront() {
+        return m_limelightFront.getEntry("tx").getDouble(0.);
+      }
+      public double getTYFront() {
+        return m_limelightFront.getEntry("ty").getDouble(0.);
+      }
+      public boolean getTVFront() {
+        return m_limelightFront.getEntry("tv").getDouble(0.0) == 1.0;
+      }
       public boolean getTV() {
         return m_limelight.getEntry("tv").getDouble(0.0) == 1.0;
+      }
+      public boolean getTVRear() {
+        return m_limelightRear.getEntry("tv").getDouble(0.0) == 1.0;
       }
       public double getTZ() {
         return m_limelight.getEntry("ty").getDouble(0.0);
@@ -427,6 +443,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         var array = m_limelightRear.getEntry("botpose_wpired").getDoubleArray(new double[]{});
         double[] result = {array[0], array[1], array[5]};
         Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
+        return pose;
+      }
+      public Pose2d getFrontLLPose() {
+        var array = m_limelightFront.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        double[] result = {array[0], array[1], array[5]};
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]*(Math.PI/180)));
         return pose;
       }
       public SwerveModulePosition[] getModulePositions() {
@@ -451,9 +473,4 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
 
         return AutoBuilder.followPath(path); }
-        
-
-
-
-      
 }

@@ -92,17 +92,29 @@ public class RobotContainer {
         publisher = NetworkTableInstance.getDefault()
         .getStructTopic("MyPose", Pose2d.struct).publish();
         configureBindings();
-
-        
-
+        if (drivetrain.getTVFront()) {
+            poseEstimator.resetPose(drivetrain.getFrontLLPose());
+        }
     }
     public void getInput() {
-        poseEstimator.addVisionMeasurement(drivetrain.getPoseLL(), Utils.getCurrentTimeSeconds());
-        poseEstimator.addVisionMeasurement(drivetrain.getRearLLPose(), Utils.getCurrentTimeSeconds());
-        poseEstimator.update(new Rotation2d((double)drivetrain.getPoseLL().getRotation().getDegrees()-180), drivetrain.getModulePositions());
-        if (drivetrain.getTV()) {
-            poseEstimator.resetPose(drivetrain.getPoseLL());
+        // if (drivetrain.getTV()) {
+        // poseEstimator.addVisionMeasurement(drivetrain.getPoseLL(), Utils.getCurrentTimeSeconds());
+        // poseEstimator.update(drivetrain.getPoseLL().getRotation(), drivetrain.getModulePositions());
+        // }
+        if (drivetrain.getTVFront()) {
+        poseEstimator.addVisionMeasurement(drivetrain.getFrontLLPose(), Utils.getCurrentTimeSeconds());
+        poseEstimator.update(drivetrain.getFrontLLPose().getRotation(), drivetrain.getModulePositions());
         }
+        // else if (drivetrain.getTVRear()) {
+        // poseEstimator.addVisionMeasurement(drivetrain.getRearLLPose(), Utils.getCurrentTimeSeconds());
+        // poseEstimator.update(drivetrain.getRearLLPose().getRotation(), drivetrain.getModulePositions());
+        // }
+        else {
+        poseEstimator.update(drivetrain.getPigeon2().getRotation2d(), drivetrain.getModulePositions());
+        }
+        
+        
+        
         publisher.set(poseEstimator.getEstimatedPosition());
     }
 
@@ -133,6 +145,19 @@ public class RobotContainer {
         joystick.b().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
+        joystick.start().onTrue(
+          new InstantCommand(
+            () -> poseEstimator.resetPose(
+                drivetrain.getTVFront() ?
+                drivetrain.getFrontLLPose() :
+                (
+                    drivetrain.getTV() ?
+                    drivetrain.getPoseLL() :
+                    drivetrain.getRearLLPose()
+                )
+            )
+          )  
+        );
         joystick.povUp().whileTrue(
             new RunCommand(
               () -> motor.set(0.15)
@@ -162,15 +187,16 @@ public class RobotContainer {
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
     
-        // new JoystickButton(buttons, 12).whileTrue(
-        //     new SequentialCommandGroup(
-        //         new RotateToAprilTag(drivetrain, driveRR, 3),
-        //         new DriveToAprilTag(drivetrain, driveRR),
-        //         new RotateToAprilTag(drivetrain, driveRR, 2)
-        //     )
-        // );
-
-        new JoystickButton(buttons, 12).whileTrue(new FollowPath(drivetrain, driveRR));
+        new JoystickButton(buttons, 12).whileTrue(
+            new SequentialCommandGroup(
+                new RotateToAprilTag(drivetrain, driveRR, 3),
+                new DriveToAprilTag(drivetrain, driveRR, 20, false, 0.),
+                new RotateToAprilTag(drivetrain, driveRR, 2)
+            )
+        );
+        joystick.a().whileTrue(
+            new DriveToAprilTag(drivetrain, driveRR, -20, true, -9)
+        );
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
