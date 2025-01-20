@@ -76,13 +76,14 @@ public class RobotContainer {
     StructPublisher<Pose2d> publisher;
     private AutoChooser autoChooser;
     private AutoFactory autoFactory;
+    Pose2d pose;
     private final Autos autos = new Autos(drivetrain);
     public RobotContainer() {
         autoChooser = new AutoChooser();
     // Add options to the chooser
     //autoChooser.addRoutine("Example Routine", this::exampleRoutine);
     autoChooser.addCmd("firstpathsketch", () -> autos.testpath());
-    drivetrain.resetGyro();
+    drivetrain.resetGyro(180.);
     // Put the auto chooser on the dashboard
     SmartDashboard.putData(autoChooser);
     // Schedule the selected auto during the autonomous period
@@ -92,9 +93,8 @@ public class RobotContainer {
         publisher = NetworkTableInstance.getDefault()
         .getStructTopic("MyPose", Pose2d.struct).publish();
         configureBindings();
-    }
+        }
     public void getInput() {
-        
         
         
         publisher.set(drivetrain.getPose());
@@ -123,13 +123,13 @@ public class RobotContainer {
                 .withRotationalRate(-joystick.getRightX() * MaxAngularRate)
             )
         );
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        // joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
         joystick.b().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
         joystick.start().onTrue(
           new InstantCommand(
-            () -> drivetrain.resetGyro()
+            () -> drivetrain.resetGyro(0)
           )  
         );
         joystick.povUp().whileTrue(
@@ -168,8 +168,11 @@ public class RobotContainer {
                 new RotateToAprilTag(drivetrain, driveRR, 2)
             )
         );
-        joystick.a().whileTrue(
+        joystick.a().and(joystick.povRight()).whileTrue(
             new DriveToAprilTag(drivetrain, driveRR, -20, true, -9)
+        );
+        joystick.a().and(joystick.povLeft()).whileTrue(
+            new DriveToAprilTag(drivetrain, driveRR, 15, true, -7)
         );
         drivetrain.registerTelemetry(logger::telemeterize);
     }

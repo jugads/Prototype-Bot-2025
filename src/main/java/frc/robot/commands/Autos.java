@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
@@ -46,8 +47,9 @@ public class Autos extends Command {
 
  public Command testpath() {
   return Commands.sequence(
-    new InstantCommand(
-      () -> drivetrain.resetPose(new Pose2d(9.66354751586914, 4.0638532638549805, new Rotation2d(0.)))
+    new SequentialCommandGroup(
+      new InstantCommand(() -> drivetrain.resetGyro(0)),
+      new InstantCommand(() -> drivetrain.resetPose(new Pose2d(9.66354751586914, 4.0638532638549805, drivetrain.getPigeon2().getRotation2d())))
     ),
     autoFactory.trajectoryCmd("New Path"));
  }

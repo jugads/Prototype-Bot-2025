@@ -43,8 +43,6 @@ public class Rotate180 extends Command {
     .withVelocityX(0)
     .withVelocityY(0)
     .withRotationalRate(controller.calculate(telemetry.getCurrentRot())));
-    SmartDashboard.putNumber("Rot", telemetry.getCurrentRot());
-
     }
     else {
       drivetrain.setControl(drive

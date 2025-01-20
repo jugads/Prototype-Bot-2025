@@ -29,6 +29,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
@@ -68,6 +69,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
     NetworkTable table = ntInstance.getTable("Pose");
     NetworkTable poseTable = ntInstance.getTable("MyPose");
+    Pose2d lastPose;
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
     SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(getKinematics(), getPigeon2().getRotation2d(), getModulePositions(), getFrontLLPose());
@@ -340,14 +342,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         poseEstimator.update(getPigeon2().getRotation2d(), getModulePositions());
         if (getTVFront()) {
             poseEstimator.resetPose(new Pose2d(getFrontLLPose().getTranslation(), getPigeon2().getRotation2d()));
+            lastPose = new Pose2d(getFrontLLPose().getTranslation(), getPigeon2().getRotation2d());
         }
         else if (getTV()) {
             poseEstimator.resetPose(new Pose2d(getPoseLL().getTranslation(), getPigeon2().getRotation2d()));
         }
-        if (getFrontLLPose().getRotation().getDegrees() - getPose().getRotation().getDegrees() > 90) {
-            getPigeon2().setYaw(getFrontLLPose().getRotation().getDegrees());
-            
-        }
+        // if (getFrontLLPose().getRotation().getDegrees() - getPose().getRotation().getDegrees() > 90) {
+        //     getPigeon2().setYaw(getFrontLLPose().getRotation().getDegrees());
+        // }
+        
         // SmartDashboard.putBoolean("Sensor Val", sensor.get());
         //  * Periodically try to apply the operator perspective.
         //  * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
@@ -383,7 +386,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
     public AutoFactory createAutoFactory(TrajectoryLogger<SwerveSample> trajLogger) {
         return new AutoFactory(
-            () -> this.getState().Pose,
+            () -> this.getPose(),
             this::resetPose,
             this::followPath,
             false,
@@ -398,7 +401,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public void followPath(SwerveSample sample) {
         m_pathThetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-        var pose = getFrontLLPose();
+        var pose = getPose();
 
         var targetSpeeds = sample.getChassisSpeeds();
         targetSpeeds.vxMetersPerSecond += m_pathXController.calculate(
@@ -419,9 +422,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
     public double getTX() {
         return m_limelight.getEntry("tx").getDouble(0.0);
-      }
-      public Pose2d getPoseNT() {
-        return (Pose2d) NetworkTableInstance.getDefault().getStructTopic("MyPose", Pose2d.struct).getEntry(getFrontLLPose(), (PubSubOption)null);
       }
       public double getTY() {
         return m_limelight.getEntry("ty").getDouble(0.0);
@@ -454,13 +454,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         // SmartDashboard.putNumberArray("Raw Pose", result);
       }
       public Pose2d getRearLLPose() {
-        var array = m_limelightRear.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        var array = m_limelightRear.getEntry("botpose_wpiblue").getDoubleArray(new double[]{});
         double[] result = {array[0], array[1], array[5]};
         Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
         return pose;
       }
       public Pose2d getFrontLLPose() {
-        var array = m_limelightFront.getEntry("botpose_wpired").getDoubleArray(new double[]{});
+        var array = m_limelightFront.getEntry("botpose_wpiblue").getDoubleArray(new double[]{});
         double[] result = {array[0], array[1], array[5]};
         Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
         return pose;
@@ -489,10 +489,18 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       public Pose2d getPose() {
         return poseEstimator.getEstimatedPosition();
       }
-      public void resetGyro() {
-        getPigeon2().reset();
+      public void resetGyro(double angle) {
+        getPigeon2().setYaw(angle);
       }
-
+      public Pose2d getPoseIntegral(Pose2d previousPose) {
+        var x = previousPose.getX();
+        var y = previousPose.getY();
+        var accelX = getPigeon2().getAccelerationX().getValueAsDouble();
+        var accelY = getPigeon2().getAccelerationY().getValueAsDouble();
+        var newX = (accelX * Math.pow(Utils.getCurrentTimeSeconds(), 2))/2;
+        var newY = (accelY * Math.pow(Utils.getCurrentTimeSeconds(), 2))/2;
+        return new Pose2d(newX, newY, getPigeon2().getRotation2d());
+      }
       public Command FollowPathCommand(PathPlannerPath path) {
         configureAutoBuilder();
 
