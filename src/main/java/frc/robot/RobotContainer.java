@@ -72,7 +72,7 @@ public class RobotContainer {
     private final SparkMax motor = new SparkMax(3, MotorType.kBrushless);
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     // private final  SendableChooser<Command> autoChooser;
-    SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(drivetrain.getKinematics(), new Rotation2d(logger.getCurrentRot()), drivetrain.getModulePositions(), drivetrain.getPoseLL());
+    // SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(drivetrain.getKinematics(), new Rotation2d(logger.getCurrentRot()), drivetrain.getModulePositions(), drivetrain.getPoseLL());
     StructPublisher<Pose2d> publisher;
     private AutoChooser autoChooser;
     private AutoFactory autoFactory;
@@ -82,7 +82,7 @@ public class RobotContainer {
     // Add options to the chooser
     //autoChooser.addRoutine("Example Routine", this::exampleRoutine);
     autoChooser.addCmd("firstpathsketch", () -> autos.testpath());
-    
+    drivetrain.resetGyro();
     // Put the auto chooser on the dashboard
     SmartDashboard.putData(autoChooser);
     // Schedule the selected auto during the autonomous period
@@ -92,30 +92,12 @@ public class RobotContainer {
         publisher = NetworkTableInstance.getDefault()
         .getStructTopic("MyPose", Pose2d.struct).publish();
         configureBindings();
-        if (drivetrain.getTVFront()) {
-            poseEstimator.resetPose(drivetrain.getFrontLLPose());
-        }
     }
     public void getInput() {
-        // if (drivetrain.getTV()) {
-        // poseEstimator.addVisionMeasurement(drivetrain.getPoseLL(), Utils.getCurrentTimeSeconds());
-        // poseEstimator.update(drivetrain.getPoseLL().getRotation(), drivetrain.getModulePositions());
-        // }
-        if (drivetrain.getTVFront()) {
-        poseEstimator.addVisionMeasurement(drivetrain.getFrontLLPose(), Utils.getCurrentTimeSeconds());
-        poseEstimator.update(drivetrain.getFrontLLPose().getRotation(), drivetrain.getModulePositions());
-        }
-        // else if (drivetrain.getTVRear()) {
-        // poseEstimator.addVisionMeasurement(drivetrain.getRearLLPose(), Utils.getCurrentTimeSeconds());
-        // poseEstimator.update(drivetrain.getRearLLPose().getRotation(), drivetrain.getModulePositions());
-        // }
-        else {
-        poseEstimator.update(drivetrain.getPigeon2().getRotation2d(), drivetrain.getModulePositions());
-        }
         
         
         
-        publisher.set(poseEstimator.getEstimatedPosition());
+        publisher.set(drivetrain.getPose());
     }
 
     private void configureBindings() {
@@ -147,15 +129,7 @@ public class RobotContainer {
         ));
         joystick.start().onTrue(
           new InstantCommand(
-            () -> poseEstimator.resetPose(
-                drivetrain.getTVFront() ?
-                drivetrain.getFrontLLPose() :
-                (
-                    drivetrain.getTV() ?
-                    drivetrain.getPoseLL() :
-                    drivetrain.getRearLLPose()
-                )
-            )
+            () -> drivetrain.resetGyro()
           )  
         );
         joystick.povUp().whileTrue(

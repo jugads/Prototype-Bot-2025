@@ -70,9 +70,9 @@ private final double fadeSpeed = 0.1; // Adjust this value for fade speed
   public void disabledInit() {
     timer = new Timer();
     timer.start();
-    DataLogManager.start();
-    // DataLog log = DataLogManager.getLog();
-    DriverStation.startDataLog(DataLogManager.getLog());
+    // DataLogManager.start();
+    // // DataLog log = DataLogManager.getLog();
+    // DriverStation.startDataLog(DataLogManager.getLog());
   }
 
   @Override

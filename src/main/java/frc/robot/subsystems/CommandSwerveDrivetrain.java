@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -25,6 +26,7 @@ import choreo.auto.AutoFactory;
 import choreo.trajectory.SwerveSample;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -56,7 +58,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Field2d field = new Field2d();
     private double m_lastSimTime;
     NetworkTable m_limelight = NetworkTableInstance.getDefault().getTable("limelight");
-
     NetworkTable m_limelightRear = NetworkTableInstance.getDefault().getTable("limelight-back");
     NetworkTable m_limelightFront = NetworkTableInstance.getDefault().getTable("limelight-front");
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
@@ -69,7 +70,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     NetworkTable poseTable = ntInstance.getTable("MyPose");
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
-
+    SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(getKinematics(), getPigeon2().getRotation2d(), getModulePositions(), getFrontLLPose());
     private final SwerveRequest.ApplyRobotSpeeds m_ApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
     /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
@@ -85,9 +86,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         new SysIdRoutine.Config(
             null,        // Use default ramp rate (1 V/s)
             Volts.of(4), // Reduce dynamic step voltage to 4 V to prevent brownout
-            null,        // Use default timeout (10 s)
+            null        // Use default timeout (10 s)
             // Log state with SignalLogger class
-            state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())
+            // state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())
         ),
         new SysIdRoutine.Mechanism(
             output -> setControl(m_translationCharacterization.withVolts(output)),
@@ -101,9 +102,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         new SysIdRoutine.Config(
             null,        // Use default ramp rate (1 V/s)
             Volts.of(7), // Use dynamic voltage of 7 V
-            null,        // Use default timeout (10 s)
+            null        // Use default timeout (10 s)
             // Log state with SignalLogger class
-            state -> SignalLogger.writeString("SysIdSteer_State", state.toString())
+            // state -> SignalLogger.writeString("SysIdSteer_State", state.toString())
         ),
         new SysIdRoutine.Mechanism(
             volts -> setControl(m_steerCharacterization.withVolts(volts)),
@@ -123,16 +124,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             Volts.of(Math.PI / 6).per(Second),
             /* This is in radians per second, but SysId only supports "volts" */
             Volts.of(Math.PI),
-            null, // Use default timeout (10 s)
+            null // Use default timeout (10 s)
             // Log state with SignalLogger class
-            state -> SignalLogger.writeString("SysIdRotation_State", state.toString())
+            // state -> SignalLogger.writeString("SysIdRotation_State", state.toString())
         ),
         new SysIdRoutine.Mechanism(
             output -> {
                 /* output is actually radians per second, but SysId only supports "volts" */
                 setControl(m_rotationCharacterization.withRotationalRate(output.in(Volts)));
                 /* also log the requested output for SysId */
-                SignalLogger.writeDouble("Rotational_Rate", output.in(Volts));
+                // SignalLogger.writeDouble("Rotational_Rate", output.in(Volts));
             },
             null,
             this
@@ -235,7 +236,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private void configureAutoBuilder() {
         try {
             var config = RobotConfig.fromGUISettings();
-            AutoBuilder.configure(()-> getState().Pose, 
+            AutoBuilder.configure(()-> getPose(), 
                                 this::resetPose,
                                 () -> getState().Speeds, 
                                 (speeds, feedforwards) -> setControl(
@@ -336,6 +337,17 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     @Override
     public void periodic() {
+        poseEstimator.update(getPigeon2().getRotation2d(), getModulePositions());
+        if (getTVFront()) {
+            poseEstimator.resetPose(new Pose2d(getFrontLLPose().getTranslation(), getPigeon2().getRotation2d()));
+        }
+        else if (getTV()) {
+            poseEstimator.resetPose(new Pose2d(getPoseLL().getTranslation(), getPigeon2().getRotation2d()));
+        }
+        if (getFrontLLPose().getRotation().getDegrees() - getPose().getRotation().getDegrees() > 90) {
+            getPigeon2().setYaw(getFrontLLPose().getRotation().getDegrees());
+            
+        }
         // SmartDashboard.putBoolean("Sensor Val", sensor.get());
         //  * Periodically try to apply the operator perspective.
         //  * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
@@ -450,7 +462,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       public Pose2d getFrontLLPose() {
         var array = m_limelightFront.getEntry("botpose_wpired").getDoubleArray(new double[]{});
         double[] result = {array[0], array[1], array[5]};
-        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]*(Math.PI/180)));
+        Pose2d pose = new Pose2d(result[0], result[1], new Rotation2d(result[2]));
         return pose;
       }
       public SwerveModulePosition[] getModulePositions() {
@@ -459,7 +471,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
       public PathPlannerPath Makepath(Pose2d Point) {
         List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
-        getPoseLL(),
+        getPose(),
         Point
     );
     PathConstraints constraints = new PathConstraints(3.0, 3.0, 2 * Math.PI, 4 * Math.PI); // The constraints for this path.
@@ -470,6 +482,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         null// Goal end state. You can set a holonomic rotation here. If using a differential drivetrain, the rotation will have no effect.
     );
     return path;
+      }
+      public void resetPose(Pose2d pose) {
+        poseEstimator.resetPose(pose);
+      }
+      public Pose2d getPose() {
+        return poseEstimator.getEstimatedPosition();
+      }
+      public void resetGyro() {
+        getPigeon2().reset();
       }
 
       public Command FollowPathCommand(PathPlannerPath path) {
